@@ -5,25 +5,58 @@
 
 import { Platform } from 'react-native';
 
-const tintColorLight = '#0a7ea4';
-const tintColorDark = '#fff';
+// Primary Colors - Emerald Green
+const primaryLight = '#00a36c';
+const primaryHoverLight = '#008f5a';
+const primaryDark = '#00d88b';
+const primaryHoverDark = '#00c47a';
+
+// Secondary Colors - Deep Teal
+const secondaryLight = '#004d40';
+const secondaryDark = '#006b5c';
+
+// Accent/Success - Bright Lime
+const accent = '#55e68c';
+
+const tintColorLight = primaryLight;
+const tintColorDark = primaryDark;
 
 export const Colors = {
   light: {
-    text: '#11181C',
-    background: '#fff',
+    text: '#1e1e1e',
+    textMuted: '#6a6a6a',
+    background: '#f7f7f7',
+    backgroundCard: '#ffffff',
+    backgroundHover: '#efefef',
+    primary: primaryLight,
+    primaryHover: primaryHoverLight,
+    secondary: secondaryLight,
+    accent: accent,
     tint: tintColorLight,
     icon: '#687076',
     tabIconDefault: '#687076',
     tabIconSelected: tintColorLight,
+    border: 'rgba(30, 30, 30, 0.1)',
+    error: '#dc2626',
+    success: '#16a34a',
   },
   dark: {
-    text: '#ECEDEE',
-    background: '#151718',
+    text: '#ffffff',
+    textMuted: '#afafaf',
+    background: '#121212',
+    backgroundCard: '#1e1e1e',
+    backgroundHover: '#2a2a2a',
+    primary: primaryDark,
+    primaryHover: primaryHoverDark,
+    secondary: secondaryDark,
+    accent: accent,
     tint: tintColorDark,
     icon: '#9BA1A6',
     tabIconDefault: '#9BA1A6',
     tabIconSelected: tintColorDark,
+    border: 'rgba(255, 255, 255, 0.1)',
+    error: '#ef4444',
+    success: '#22c55e',
   },
 };
 
