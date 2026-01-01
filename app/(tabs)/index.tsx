@@ -16,7 +16,7 @@ export default function DashboardScreen() {
   const router = useRouter();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
-  const [, setUserId] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>("");
 
   const backgroundColor = useThemeColor({}, "background");
   const cardBackground = useThemeColor({}, "backgroundCard");
@@ -31,7 +31,7 @@ export default function DashboardScreen() {
         if (userStr) {
           const user = JSON.parse(userStr);
           setUserId(user.id);
-          const userTasks = await taskService.getTasksByUserId(user.id);
+          const userTasks = await taskService.getAllTasks();
           setTasks(userTasks);
         }
       } catch (error) {
