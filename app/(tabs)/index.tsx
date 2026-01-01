@@ -16,7 +16,6 @@ export default function DashboardScreen() {
   const router = useRouter();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
-  const [userId, setUserId] = useState<string | null>("");
 
   const backgroundColor = useThemeColor({}, "background");
   const cardBackground = useThemeColor({}, "backgroundCard");
@@ -29,8 +28,6 @@ export default function DashboardScreen() {
       try {
         const userStr = await AsyncStorage.getItem("user");
         if (userStr) {
-          const user = JSON.parse(userStr);
-          setUserId(user.id);
           const userTasks = await taskService.getAllTasks();
           setTasks(userTasks);
         }
@@ -48,6 +45,15 @@ export default function DashboardScreen() {
     (task) => task.status === "completed"
   ).length;
   const totalTasks = tasks.length;
+
+  // Get recent tasks sorted by updated date (most recent first)
+  const recentTasks = [...tasks]
+    .sort((a, b) => {
+      const dateA = new Date(a.updatedAt || a.createdAt).getTime();
+      const dateB = new Date(b.updatedAt || b.createdAt).getTime();
+      return dateB - dateA;
+    })
+    .slice(0, 5); // Show only the 5 most recent
 
   return (
     <ThemedView style={[styles.container, { backgroundColor }]}>
@@ -123,19 +129,136 @@ export default function DashboardScreen() {
           <ThemedText style={[styles.sectionTitle, { color: textColor }]}>
             Recent Activity
           </ThemedText>
-          <View
-            style={[styles.emptyState, { backgroundColor: cardBackground }]}
-          >
-            <Ionicons name="time-outline" size={48} color={textMuted} />
-            <ThemedText style={[styles.emptyStateText, { color: textMuted }]}>
-              No recent activity
-            </ThemedText>
-            <ThemedText
-              style={[styles.emptyStateSubtext, { color: textMuted }]}
+          {loading ? (
+            <View
+              style={[styles.emptyState, { backgroundColor: cardBackground }]}
             >
-              Start by adding your first wish
-            </ThemedText>
-          </View>
+              <ThemedText style={[styles.emptyStateText, { color: textMuted }]}>
+                Loading...
+              </ThemedText>
+            </View>
+          ) : recentTasks.length === 0 ? (
+            <View
+              style={[styles.emptyState, { backgroundColor: cardBackground }]}
+            >
+              <Ionicons name="time-outline" size={48} color={textMuted} />
+              <ThemedText style={[styles.emptyStateText, { color: textMuted }]}>
+                No recent activity
+              </ThemedText>
+              <ThemedText
+                style={[styles.emptyStateSubtext, { color: textMuted }]}
+              >
+                Start by adding your first wish
+              </ThemedText>
+            </View>
+          ) : (
+            <View style={styles.tasksList}>
+              {recentTasks.map((task) => {
+                const statusColor =
+                  task.status === "completed"
+                    ? Colors[colorScheme].success
+                    : task.status === "in progress"
+                    ? primaryColor
+                    : textMuted;
+                const statusIcon =
+                  task.status === "completed"
+                    ? "checkmark-circle"
+                    : task.status === "in progress"
+                    ? "time"
+                    : "ellipse-outline";
+
+                return (
+                  <View
+                    key={task._id}
+                    style={[
+                      styles.taskCard,
+                      { backgroundColor: cardBackground },
+                    ]}
+                  >
+                    <View style={styles.taskHeader}>
+                      <View style={styles.taskTitleRow}>
+                        <Ionicons
+                          name={statusIcon as any}
+                          size={20}
+                          color={statusColor}
+                        />
+                        <ThemedText
+                          style={[styles.taskTitle, { color: textColor }]}
+                          numberOfLines={1}
+                        >
+                          {task.title}
+                        </ThemedText>
+                      </View>
+                      <ThemedText
+                        style={[styles.taskDate, { color: textMuted }]}
+                      >
+                        {new Date(
+                          task.updatedAt || task.createdAt
+                        ).toLocaleDateString()}
+                      </ThemedText>
+                    </View>
+                    {task.description && (
+                      <ThemedText
+                        style={[styles.taskDescription, { color: textMuted }]}
+                        numberOfLines={2}
+                      >
+                        {task.description}
+                      </ThemedText>
+                    )}
+                    <View style={styles.taskFooter}>
+                      <View
+                        style={[
+                          styles.statusBadge,
+                          {
+                            backgroundColor: statusColor + "20",
+                            borderColor: statusColor,
+                          },
+                        ]}
+                      >
+                        <ThemedText
+                          style={[styles.statusText, { color: statusColor }]}
+                        >
+                          {task.status.charAt(0).toUpperCase() +
+                            task.status.slice(1)}
+                        </ThemedText>
+                      </View>
+                      {task.priority && (
+                        <View
+                          style={[
+                            styles.priorityBadge,
+                            {
+                              backgroundColor:
+                                task.priority === "HIGH"
+                                  ? Colors[colorScheme].error + "20"
+                                  : task.priority === "NORMAL"
+                                  ? primaryColor + "20"
+                                  : textMuted + "20",
+                            },
+                          ]}
+                        >
+                          <ThemedText
+                            style={[
+                              styles.priorityText,
+                              {
+                                color:
+                                  task.priority === "HIGH"
+                                    ? Colors[colorScheme].error
+                                    : task.priority === "NORMAL"
+                                    ? primaryColor
+                                    : textMuted,
+                              },
+                            ]}
+                          >
+                            {task.priority}
+                          </ThemedText>
+                        </View>
+                      )}
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
+          )}
         </View>
       </ScrollView>
     </ThemedView>
@@ -211,5 +334,62 @@ const styles = StyleSheet.create({
   },
   emptyStateSubtext: {
     fontSize: 14,
+  },
+  tasksList: {
+    gap: 12,
+  },
+  taskCard: {
+    padding: 16,
+    borderRadius: 12,
+    gap: 12,
+  },
+  taskHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+  },
+  taskTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    flex: 1,
+  },
+  taskTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    flex: 1,
+  },
+  taskDate: {
+    fontSize: 12,
+    marginLeft: 8,
+  },
+  taskDescription: {
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  taskFooter: {
+    flexDirection: "row",
+    gap: 8,
+    alignItems: "center",
+  },
+  statusBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    borderWidth: 1,
+  },
+  statusText: {
+    fontSize: 12,
+    fontWeight: "500",
+    textTransform: "capitalize",
+  },
+  priorityBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  priorityText: {
+    fontSize: 12,
+    fontWeight: "500",
   },
 });
