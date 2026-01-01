@@ -12,10 +12,11 @@ import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useTheme } from '@/contexts/ThemeContext';
 import { authService } from '@/lib/services/authService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 
 interface User {
   id: string;
@@ -24,9 +25,11 @@ interface User {
   email: string;
 }
 
+type ThemePreference = 'light' | 'dark' | 'system';
+
 export default function ProfileScreen() {
   const router = useRouter();
-  const colorScheme = useColorScheme() ?? 'light';
+  const { themePreference, setThemePreference, colorScheme } = useTheme();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
@@ -248,6 +251,55 @@ export default function ProfileScreen() {
           )}
         </View>
 
+        {/* Theme Preference */}
+        <View style={[styles.card, { backgroundColor: cardBackground }]}>
+          <ThemedText style={[styles.sectionTitle, { color: textColor }]}>
+            Theme Preference
+          </ThemedText>
+          <ThemedText style={[styles.sectionSubtitle, { color: textMuted }]}>
+            Choose how the app appears to you.
+          </ThemedText>
+          <View style={styles.themeOptions}>
+            {(['light', 'dark', 'system'] as ThemePreference[]).map((option) => (
+              <TouchableOpacity
+                key={option}
+                onPress={() => setThemePreference(option)}
+                style={[
+                  styles.themeOption,
+                  {
+                    backgroundColor:
+                      themePreference === option ? primaryColor + '20' : 'transparent',
+                    borderColor: themePreference === option ? primaryColor : borderColor,
+                  },
+                ]}
+              >
+                <Ionicons
+                  name={
+                    option === 'light'
+                      ? 'sunny'
+                      : option === 'dark'
+                        ? 'moon'
+                        : 'phone-portrait'
+                  }
+                  size={20}
+                  color={themePreference === option ? primaryColor : textMuted}
+                />
+                <ThemedText
+                  style={[
+                    styles.themeOptionText,
+                    {
+                      color: themePreference === option ? primaryColor : textColor,
+                      fontWeight: themePreference === option ? '600' : '400',
+                    },
+                  ]}
+                >
+                  {option.charAt(0).toUpperCase() + option.slice(1)}
+                </ThemedText>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
         {/* Account Information */}
         <View style={[styles.card, { backgroundColor: cardBackground }]}>
           <ThemedText style={[styles.sectionTitle, { color: textColor }]}>
@@ -411,6 +463,26 @@ const styles = StyleSheet.create({
   logoutText: {
     fontSize: 16,
     fontWeight: '500',
+  },
+  themeOptions: {
+    flexDirection: 'row',
+    gap: 12,
+    flexWrap: 'wrap',
+    marginTop: 20,
+  },
+  themeOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 16,
+    borderWidth: 1,
+    minWidth: 100,
+  },
+  themeOptionText: {
+    fontSize: 14,
+    textTransform: 'capitalize',
   },
 });
 

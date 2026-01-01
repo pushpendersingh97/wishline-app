@@ -12,7 +12,7 @@ import React, { useEffect, useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 
 export default function DashboardScreen() {
-  const colorScheme = useColorScheme() ?? "light";
+  const colorScheme = (useColorScheme() ?? "light") as "light" | "dark";
   const router = useRouter();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
