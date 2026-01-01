@@ -1,3 +1,4 @@
+import { AddWishModal } from "@/components/modals/AddWishModal";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { Button } from "@/components/ui/Button";
@@ -9,13 +10,15 @@ import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
-import { ScrollView, StyleSheet, View } from "react-native";
+import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 
 export default function DashboardScreen() {
   const colorScheme = (useColorScheme() ?? "light") as "light" | "dark";
   const router = useRouter();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isAddWishModalOpen, setIsAddWishModalOpen] = useState(false);
+  const [editingWish, setEditingWish] = useState<Task | null>(null);
 
   const backgroundColor = useThemeColor({}, "background");
   const cardBackground = useThemeColor({}, "backgroundCard");
@@ -23,22 +26,23 @@ export default function DashboardScreen() {
   const textColor = useThemeColor({}, "text");
   const textMuted = useThemeColor({}, "textMuted");
 
-  useEffect(() => {
-    const loadUserAndTasks = async () => {
-      try {
-        const userStr = await AsyncStorage.getItem("user");
-        if (userStr) {
-          const userTasks = await taskService.getAllTasks();
-          setTasks(userTasks);
-        }
-      } catch (error) {
-        console.error("Error loading tasks:", error);
-      } finally {
-        setLoading(false);
+  const loadTasks = async () => {
+    try {
+      setLoading(true);
+      const userStr = await AsyncStorage.getItem("user");
+      if (userStr) {
+        const userTasks = await taskService.getAllTasks();
+        setTasks(userTasks);
       }
-    };
+    } catch (error) {
+      console.error("Error loading tasks:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    loadUserAndTasks();
+  useEffect(() => {
+    loadTasks();
   }, []);
 
   const completedTasks = tasks.filter(
@@ -101,7 +105,7 @@ export default function DashboardScreen() {
           <View style={styles.actionsContainer}>
             <Button
               onPress={() => {
-                // TODO: Implement add wish functionality
+                setIsAddWishModalOpen(true);
               }}
               style={styles.actionButton}
             >
@@ -206,53 +210,68 @@ export default function DashboardScreen() {
                       </ThemedText>
                     )}
                     <View style={styles.taskFooter}>
-                      <View
-                        style={[
-                          styles.statusBadge,
-                          {
-                            backgroundColor: statusColor + "20",
-                            borderColor: statusColor,
-                          },
-                        ]}
-                      >
-                        <ThemedText
-                          style={[styles.statusText, { color: statusColor }]}
-                        >
-                          {task.status.charAt(0).toUpperCase() +
-                            task.status.slice(1)}
-                        </ThemedText>
-                      </View>
-                      {task.priority && (
+                      <View style={styles.taskBadges}>
                         <View
                           style={[
-                            styles.priorityBadge,
+                            styles.statusBadge,
                             {
-                              backgroundColor:
-                                task.priority === "HIGH"
-                                  ? Colors[colorScheme].error + "20"
-                                  : task.priority === "NORMAL"
-                                  ? primaryColor + "20"
-                                  : textMuted + "20",
+                              backgroundColor: statusColor + "20",
+                              borderColor: statusColor,
                             },
                           ]}
                         >
                           <ThemedText
+                            style={[styles.statusText, { color: statusColor }]}
+                          >
+                            {task.status.charAt(0).toUpperCase() +
+                              task.status.slice(1)}
+                          </ThemedText>
+                        </View>
+                        {task.priority && (
+                          <View
                             style={[
-                              styles.priorityText,
+                              styles.priorityBadge,
                               {
-                                color:
+                                backgroundColor:
                                   task.priority === "HIGH"
-                                    ? Colors[colorScheme].error
+                                    ? Colors[colorScheme].error + "20"
                                     : task.priority === "NORMAL"
-                                    ? primaryColor
-                                    : textMuted,
+                                    ? primaryColor + "20"
+                                    : textMuted + "20",
                               },
                             ]}
                           >
-                            {task.priority}
-                          </ThemedText>
-                        </View>
-                      )}
+                            <ThemedText
+                              style={[
+                                styles.priorityText,
+                                {
+                                  color:
+                                    task.priority === "HIGH"
+                                      ? Colors[colorScheme].error
+                                      : task.priority === "NORMAL"
+                                      ? primaryColor
+                                      : textMuted,
+                                },
+                              ]}
+                            >
+                              {task.priority}
+                            </ThemedText>
+                          </View>
+                        )}
+                      </View>
+                      <TouchableOpacity
+                        onPress={() => {
+                          setEditingWish(task);
+                          setIsAddWishModalOpen(true);
+                        }}
+                        style={styles.editButton}
+                      >
+                        <Ionicons
+                          name="create-outline"
+                          size={20}
+                          color={textMuted}
+                        />
+                      </TouchableOpacity>
                     </View>
                   </View>
                 );
@@ -261,6 +280,20 @@ export default function DashboardScreen() {
           )}
         </View>
       </ScrollView>
+
+      {/* Add Wish Modal */}
+      <AddWishModal
+        isOpen={isAddWishModalOpen}
+        onClose={() => {
+          setIsAddWishModalOpen(false);
+          setEditingWish(null);
+        }}
+        onSuccess={() => {
+          loadTasks();
+          setEditingWish(null);
+        }}
+        editingWish={editingWish}
+      />
     </ThemedView>
   );
 }
@@ -369,8 +402,17 @@ const styles = StyleSheet.create({
   },
   taskFooter: {
     flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  taskBadges: {
+    flexDirection: "row",
     gap: 8,
     alignItems: "center",
+    flex: 1,
+  },
+  editButton: {
+    padding: 4,
   },
   statusBadge: {
     paddingHorizontal: 8,
